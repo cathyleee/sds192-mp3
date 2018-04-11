@@ -5,7 +5,7 @@ date: "7 April 2018"
 output: html_document
 ---
 
-```{r message=FALSE}
+```{r message = FALSE}
 # load the libraries and data
 devtools::install_github("beanumber/macleish")
 library(tidyverse)
@@ -38,7 +38,7 @@ trails_combined <- trails %>%
 ```
 
 ```{r}
-# try out joining the two data frames
-trails_intersect <- st_intersection(macleish_layers[["trails"]],
+# join the two sf data frames
+trails_intersect <- st_intersection(trails_combined,
                 macleish_layers[["contours_3m"]])
 ```

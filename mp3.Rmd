@@ -38,6 +38,6 @@ trails_combined <- trails %>%
 
 ```{r}
 # try out joining the two data frames
-trails_elevation <- st_intersection(macleish_layers[["trails"]],
+trails_intersect <- st_intersection(macleish_layers[["trails"]],
                 contour_elevation)
 ```

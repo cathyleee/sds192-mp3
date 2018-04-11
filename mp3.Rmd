@@ -24,11 +24,6 @@ names(macleish_layers)
 ```
 
 ```{r}
-contour_elevation <- macleish_layers[["contours_3m"]] %>%
-  st_transform(4326)
-```
-
-```{r}
 trails <- macleish_layers[["trails"]] %>%
   mutate(computed_length = st_length(geometry))
 ```
@@ -38,24 +33,11 @@ trails <- macleish_layers[["trails"]] %>%
 trails_combined <- trails %>%
   group_by(name) %>%
   summarize(color = first(color),
-            length = sum(computed_length),
-            geometry = st_union(geometry))
+            length = sum(computed_length))
 ```
 
 ```{r}
 # try out joining the two data frames
-trails_elevation <- st_intersection(macleish_layers[["trails"]], contour_elevation) %>%
-  group_by(name)
+trails_elevation <- st_intersection(macleish_layers[["trails"]],
+                contour_elevation)
 ```
-
-This is how we are going to classify the difficulty of the hiking trails
-
-- Easy:
-
-
-how do we link contour_elevation and trails? should we join them using st_intersection or st_join or what else???
-trails have duplicate names with different numbers -- how should we interpret them?
-should we use data other than the two suggested supporting data
-what does the color in trails mean?
-national park service has rated these lengths as easy, should we create our own scale? 
-how can we know if there is a bridge? should we consider just length and elevation or include other things???

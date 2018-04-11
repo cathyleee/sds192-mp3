@@ -69,6 +69,12 @@ trails_change_Elevation <- trails_intersect %>%
 trails_intersect <- st_join(trails_intersect, trails_change_Elevation)
 ```
 
+```{r}
+# find if any trails intersect any streams
+trails_intersect_streams <- st_intersection(trails_combined,
+                macleish_layers[["streams"]]) 
+```
+
 
 
 

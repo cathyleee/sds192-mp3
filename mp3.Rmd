@@ -11,6 +11,7 @@ devtools::install_github("beanumber/macleish")
 library(tidyverse)
 library(sf)
 library(macleish)
+library(leaflet)
 packageVersion("macleish")
 ```
 
@@ -40,5 +41,35 @@ trails_combined <- trails %>%
 ```{r}
 # join the two sf data frames
 trails_intersect <- st_intersection(trails_combined,
-                macleish_layers[["contours_3m"]])
+                macleish_layers[["contours_3m"]]) %>%
+  st_cast("POINT") 
+# ELEV_M is elevation above or below sea level, in meters
 ```
+
+```{r}
+primitive_plot <- leaflet() %>%
+  addTiles() %>%
+  addPolylines(data = trails_combined, weight = 1, color = "black") %>%
+  addPolylines(data = macleish_layers[["contours_3m"]], weight = 1, color = "red")
+primitive_plot 
+```
+
+```{r}
+# summarize to see for each trail, how many times it changes its elevation, what is the highest/lowest contour, and what is the mean change in height
+trails_change_Elevation <- trails_intersect %>%
+  group_by(name) %>%
+  summarize(num_change = n(),
+            min_height = min(ELEV_M),
+            max_height = max(ELEV_M)) %>%
+  mutate(mean_change = (max_height - min_height)/num_change)
+```
+
+```{r}
+# join trails_change_Elevation back to trails_intersect
+trails_intersect <- st_join(trails_intersect, trails_change_Elevation)
+```
+
+
+
+
+

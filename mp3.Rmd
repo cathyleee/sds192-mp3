@@ -6,11 +6,12 @@ output: html_document
 ---
 
 ```{r message=FALSE}
-# load the libraries and data 
+# load the libraries and data
+devtools::install_github("beanumber/macleish")
 library(tidyverse)
 library(sf)
 library(macleish)
-# packageVersion("macleish")
+packageVersion("macleish")
 ```
 
 ```{r}
@@ -39,5 +40,5 @@ trails_combined <- trails %>%
 ```{r}
 # try out joining the two data frames
 trails_intersect <- st_intersection(macleish_layers[["trails"]],
-                contour_elevation)
+                macleish_layers[["contours_3m"]])
 ```

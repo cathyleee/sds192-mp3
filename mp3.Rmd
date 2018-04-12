@@ -7,7 +7,7 @@ output: html_document
 
 ```{r message = FALSE}
 # load the libraries and data
-devtools::install_github("beanumber/macleish")
+#devtools::install_github("beanumber/macleish")
 library(tidyverse)
 library(sf)
 library(macleish)
@@ -56,7 +56,7 @@ primitive_plot
 
 ```{r}
 # summarize to see for each trail, how many times it changes its elevation, what is the highest/lowest contour, and what is the mean change in height
-trails_change_Elevation <- trails_intersect %>%
+trails_change_elevation <- trails_intersect %>%
   group_by(name) %>%
   summarize(num_change = n(),
             min_height = min(ELEV_M),
@@ -66,16 +66,65 @@ trails_change_Elevation <- trails_intersect %>%
 
 ```{r}
 # join trails_change_Elevation back to trails_intersect
-trails_intersect <- st_join(trails_intersect, trails_change_Elevation)
+trails_intersect <- st_join(trails_intersect, trails_change_elevation)
+```
+
+Things that affect difficulty levels:
+
+* Length: We rate this in the scale of 10. The longest trail (2575.217 m) has length score 10/10. We calculate the scores for the other trails by dividing their length by the biggest length and multiplying by 10, and round up to integers. 
+
+* Elevation: This has 2 smaller factors: the number of times a trail changes in elevation and the mean change in height each time. Each of these 2 factors are measured in the scale of 5, so they sum up to the scale of 10. 
+
+- The trail with the most changes in elevation has a score of 5.
+
+- The trail with the biggest mean change has a score of 5. 
+
+Then we sum the partial scores into the total score in the scale of 20:
+
+- From 0 - 7: Easy Trail
+- From 8 - 14: Moderate Trail
+- From 15- 20: Hard Trail
+
+```{r}
+trails_intersect$length <- as.numeric(trails_intersect$length, "")
+# calculate the scores
+max_length <- max(trails_intersect$length)
+max_num_change <- max(trails_intersect$num_change)
+max_mean_change <- max(trails_intersect$mean_change)
+
+trails_intersect <- trails_intersect %>%
+  mutate(score_length = round(length*10/max_length),
+         score_num = round(num_change*5/max_num_change),
+         score_mean = round(mean_change*5/max_mean_change)) %>%
+  mutate(total_score = score_length + score_num + score_mean) %>%
+  mutate(level = if_else(total_score > 14, "hard", if_else(total_score > 7, "moderate", "easy"))) 
 ```
 
 ```{r}
-# find if any trails intersect any streams
-trails_intersect_streams <- st_intersection(trails_combined,
-                macleish_layers[["streams"]]) 
+# summarize into a shorter version
+trails_short <- trails_intersect %>%
+  group_by(name.x) %>%
+  summarize(score = first(total_score),
+            level = first(level))
+
+st_geometry(trails_short) <- NULL
+
+# join trails_short back to trails_combined
+trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x"))
 ```
 
+```{r}
+# change orders of factors in the variable `level`
+trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 
+# plot the trails and their levels into the map
+pal <- colorFactor(palette = c("blue", "yellow", "red"), domain = trails_mapped$level)
 
+leaflet(data = trails_mapped) %>%
+  addTiles() %>%
+  addPolylines(color = ~pal(level)) %>%
+  addMarkers(popup = ~name.x) %>%
+  addLegend("bottomright", pal = pal, values = ~level)
+```
 
 

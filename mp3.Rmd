@@ -115,7 +115,7 @@ st_geometry(trails_short) <- NULL
 trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x"))
 ```
 
-```{r eval=FALSE}
+```{r}
 # change orders of factors in the variable `level`
 trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 

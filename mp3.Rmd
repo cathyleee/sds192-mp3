@@ -131,4 +131,5 @@ leaflet(data = trails_mapped) %>%
 # we may want to add layer contours into this map using layer control
 ```
 
-From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails. 
+From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
+

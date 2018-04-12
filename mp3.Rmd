@@ -13,7 +13,7 @@ library(tidyverse)
 library(sf)
 library(macleish)
 library(leaflet)
-packageVersion("macleish")
+#packageVersion("macleish")
 ```
 
 ### Classification of existing trails by level of difficulty based on length and elevation change
@@ -132,5 +132,12 @@ leaflet(data = trails_mapped) %>%
 
 From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
 
+<<<<<<< HEAD
 ### Classification of trails by biodiversity/vegetation
 
+=======
+```{r}
+# read in the Arts Afield Sites shapefile
+arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
+```
+>>>>>>> 754c5f2b17312ac95d667c8f3482e98d03fc8d60

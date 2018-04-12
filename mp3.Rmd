@@ -12,8 +12,10 @@ library(tidyverse)
 library(sf)
 library(macleish)
 library(leaflet)
-packageVersion("macleish")
+#packageVersion("macleish")
 ```
+
+Please visit our Github repository for more details on our project [^github].
 
 ```{r}
 # explore the data
@@ -38,7 +40,7 @@ trails_combined <- trails %>%
             length = sum(computed_length))
 ```
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 # join the two sf data frames
 trails_intersect <- st_intersection(trails_combined,
                 macleish_layers[["contours_3m"]]) %>%
@@ -64,7 +66,7 @@ trails_change_elevation <- trails_intersect %>%
   mutate(mean_change = (max_height - min_height)/num_change)
 ```
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 # join trails_change_Elevation back to trails_intersect
 trails_intersect <- st_join(trails_intersect, trails_change_elevation)
 ```
@@ -113,7 +115,7 @@ st_geometry(trails_short) <- NULL
 trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x"))
 ```
 
-```{r}
+```{r eval=FALSE}
 # change orders of factors in the variable `level`
 trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 
@@ -128,3 +130,4 @@ leaflet(data = trails_mapped) %>%
 ```
 
 
+[^github]: https://github.com/cathyleee/sds192-mp3

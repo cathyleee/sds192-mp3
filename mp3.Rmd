@@ -110,7 +110,10 @@ trails_short <- trails_intersect %>%
 st_geometry(trails_short) <- NULL
 
 # join trails_short back to trails_combined
-trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x"))
+trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x")) 
+marker_points <- trails_mapped %>%
+  mutate(point = st_cast(geometry, "POINT")) %>%
+  select(point)
 ```
 
 ```{r}
@@ -122,9 +125,10 @@ pal <- colorFactor(palette = c("blue", "yellow", "red"), domain = trails_mapped$
 
 leaflet(data = trails_mapped) %>%
   addTiles() %>%
-  addPolylines(color = ~pal(level)) %>%
-  addMarkers(popup = ~name.x) %>%
+  addPolylines(color = ~pal(level), label = ~name) %>%
   addLegend("bottomright", pal = pal, values = ~level)
+
+# we may want to add layer contours into this map using layer control
 ```
 
-
+From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails. 

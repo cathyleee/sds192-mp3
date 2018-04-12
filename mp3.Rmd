@@ -16,14 +16,12 @@ library(leaflet)
 packageVersion("macleish")
 ```
 
+### Classification of existing trails by level of difficulty based on length and elevation change
 ```{r message = FALSE}
 # explore the data
 names(macleish_layers)
 # trails is existing trails shapefile
 # forests is vegetation type shapefile
-# streams and wetlands are hydrology shapefile
-# challenge_courses is challenge course element locations shapefile
-# boundary is property boundary shapefile
 ```
 
 ```{r message = FALSE}
@@ -70,7 +68,7 @@ trails_change_elevation <- trails_intersect %>%
 trails_intersect <- st_join(trails_intersect, trails_change_elevation)
 ```
 
-Things that affect difficulty levels:
+Our heuristic to rate the difficulty level of trails
 
 * Length: We rate this in the scale of 10. The longest trail (2575.217 m) has length score 10/10. We calculate the scores for the other trails by dividing their length by the biggest length and multiplying by 10, and round up to integers. 
 
@@ -133,4 +131,6 @@ leaflet(data = trails_mapped) %>%
 ```
 
 From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
+
+### Classification of trails by biodiversity/vegetation
 

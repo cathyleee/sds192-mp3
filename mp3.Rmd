@@ -2,9 +2,10 @@
 title: "mp3"
 author: "Cathy Lee, Lizette Carpenter, Ha Cao"
 date: "7 April 2018"
-output: html_document
+output: 
+  html_document:
+     code_folding: hide
 ---
-
 ```{r message = FALSE}
 # load the libraries and data
 #devtools::install_github("beanumber/macleish")
@@ -15,7 +16,7 @@ library(leaflet)
 #packageVersion("macleish")
 ```
 
-```{r}
+```{r message = FALSE}
 # explore the data
 names(macleish_layers)
 # trails is existing trails shapefile
@@ -25,7 +26,7 @@ names(macleish_layers)
 # boundary is property boundary shapefile
 ```
 
-```{r}
+```{r message = FALSE}
 trails <- macleish_layers[["trails"]] %>%
   mutate(computed_length = st_length(geometry))
 ```
@@ -38,7 +39,7 @@ trails_combined <- trails %>%
             length = sum(computed_length))
 ```
 
-```{r}
+```{r message = FALSE}
 # join the two sf data frames
 trails_intersect <- st_intersection(trails_combined,
                 macleish_layers[["contours_3m"]]) %>%
@@ -46,7 +47,7 @@ trails_intersect <- st_intersection(trails_combined,
 # ELEV_M is elevation above or below sea level, in meters
 ```
 
-```{r}
+```{r message = FALSE}
 primitive_plot <- leaflet() %>%
   addTiles() %>%
   addPolylines(data = trails_combined, weight = 1, color = "black") %>%
@@ -54,7 +55,7 @@ primitive_plot <- leaflet() %>%
 primitive_plot 
 ```
 
-```{r}
+```{r message = FALSE}
 # summarize to see for each trail, how many times it changes its elevation, what is the highest/lowest contour, and what is the mean change in height
 trails_change_elevation <- trails_intersect %>%
   group_by(name) %>%
@@ -64,7 +65,7 @@ trails_change_elevation <- trails_intersect %>%
   mutate(mean_change = (max_height - min_height)/num_change)
 ```
 
-```{r}
+```{r message = FALSE}
 # join trails_change_Elevation back to trails_intersect
 trails_intersect <- st_join(trails_intersect, trails_change_elevation)
 ```
@@ -85,7 +86,7 @@ Then we sum the partial scores into the total score in the scale of 20:
 - From 8 - 14: Moderate Trail
 - From 15- 20: Hard Trail
 
-```{r}
+```{r message = FALSE}
 trails_intersect$length <- as.numeric(trails_intersect$length, "")
 # calculate the scores
 max_length <- max(trails_intersect$length)
@@ -100,7 +101,7 @@ trails_intersect <- trails_intersect %>%
   mutate(level = if_else(total_score > 14, "hard", if_else(total_score > 7, "moderate", "easy"))) 
 ```
 
-```{r}
+```{r message = FALSE}
 # summarize into a shorter version
 trails_short <- trails_intersect %>%
   group_by(name.x) %>%
@@ -116,7 +117,7 @@ marker_points <- trails_mapped %>%
   select(point)
 ```
 
-```{r}
+```{r message = FALSE}
 # change orders of factors in the variable `level`
 trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 

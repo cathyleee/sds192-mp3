@@ -171,6 +171,14 @@ trail_afield_num_intersect <- trail_afield_intersect %>%
   group_by(name) %>% 
   summarise(num_intersections = n())
 
+# categorise the number of intersections
+trail_afield_plot <- trail_afield_num_intersect %>%
+  mutate(level = if_else(num_intersections >= 3, "rich", if_else(num_intersections == 2, "moderate", "sparse")))
+# change the order of factors in the variable `level`
+trail_afield_plot$level = factor(trail_afield_plot$level, levels=c("sparse, moderate, rich"))
+# plot the trails and their levels into the map
+pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afield_plot$level)
+
 # Plot the data
 leaflet(data = trails_mapped) %>%
   addTiles() %>%

@@ -195,8 +195,12 @@ leaflet(data = trail_afield_mapped) %>%
   addTiles() %>%
   addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
   addLegend("bottomright", pal = pal, values = ~level) %>%
-  addMarkers(data=afield_es, popup = ~ident, group="Structures") %>%
-  addPolygons(data = afield_buffer)
+  addMarkers(data=afield_es, popup = ~ident, group="Arts Afield Sites") %>%
+  addPolygons(data = afield_buffer, group="Arts Afield Sites") %>%
+  addLayersControl(
+    overlayGroups = c("Trails", "Arts Afield Sites"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
 ```
 
 [^github]: https://github.com/cathyleee/sds192-mp3

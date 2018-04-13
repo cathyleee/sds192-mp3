@@ -89,9 +89,6 @@ st_geometry(trails_short) <- NULL
 
 # join trails_short back to trails_combined
 trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x")) 
-marker_points <- trails_mapped %>%
-  mutate(point = st_cast(geometry, "POINT")) %>%
-  select(point)
 ```
 
 ```{r message = FALSE}
@@ -106,15 +103,13 @@ pal_contours <- colorNumeric(palette = "viridis", domain = macleish_layers[["con
 leaflet(data = trails_mapped) %>%
   addTiles() %>%
   addPolylines(data = macleish_layers[["contours_3m"]], color = ~pal_contours(ELEV_M), weight = 2, group = "10' Contours") %>%
-  addLegend("bottomleft", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
+  addLegend("bottomright", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
   addPolylines(color = ~pal(level), label = ~name, group = "Trails", opacity = 0.8) %>%
   addLegend("bottomright", pal = pal, values = ~level, title = "Difficulty Level", opacity = 1) %>%
   addLayersControl(
     overlayGroups = c("Trails", "10' Contours"),
     options = layersControlOptions(collapsed = FALSE)
   ) 
-
-# we may want to add layer contours into this map using layer control
 ```
 
 From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
@@ -127,25 +122,86 @@ We can see there is a positive correlation between the lengths of the trails and
 ```{r}
 # join the two sf data frames to find intersection between trails and forests
 trails_forests <- st_intersection(trails_combined,
-                macleish_layers[["forests"]])
-
-# rename the variable Sheet__NA to be more telling
-
+                macleish_layers[["forests"]]) 
+addNA(trails_forests$Sheet1__Na)
+trails_forests <- trails_forests %>%
+  rename(forest_type = Sheet1__Na) # rename to make the variable name more telling
 ```
 
 ```{r}
-forest_buffer <- macleish_layers[["forests"]] %>%
-  st_transform(proj4_aea) %>%
-  st_buffer(dist = 10) %>%
-  st_transform(4326)
-
-leaflet() %>%
-  addTiles() %>%
-  addPolygons(data = macleish_layers[["forests"]], 
-               weight = 1, color = "black") 
+# find how many forests each trail passes by and how many unique forest types it passes by
+trails_forests$length <- as.numeric(trails_forests$length, "")
+trails_forests <- trails_forests %>%
+  group_by(name) %>%
+  summarize(distinct_veg_type = n_distinct(VegType_21),
+            distinct_forest_type = n_distinct(forest_type),
+            num_forests_crossed = n(), 
+            length = first(length)) %>%
+# add a variable to show distance hikers/bikers have to go to see a forest
+  mutate(distance_to_forest = length/num_forests_crossed)
 ```
 
+Our heuristic to rate the biodiversity/vegetation of trails:
 
+* Number of forests each trail comes across: We rate this in the scale of 10. The trail that goes through most forests (11) has score 10/10. We calculate the scores for the other trails by dividing their number of forests crossed by the biggest number of forests crossed and multiplying by 10, and round up to integers. This indicates how many times the trail changes its natural scenery.
+
+* Number of distinct forest types each trail comes across: We rate this in the scale of 10. The trail goes through most diverse types of forest (7) has score 10/10. We calculate the scores in the same way above. This shows how diverse the vegetation along the trail is. 
+
+* Average distance between forests: We rate this in the scale of 4, because even the longest average distance 367.89 m (length/number of forests) is pretty small and within walking distance, so we weigh it less. The trail with the shortest average distance has the score of 4. We want to include this because we want to make the number of forests along the trail relative to its length, because obviously longer trails are likely to come across more forests. 
+
+Then we sum the partial scores into the total score in the scale of 20:
+
+* From 0 - 8: Least Biologically Diverse Trail
+* From 9 - 16: More Biologically Diverse Trail
+* From 17- 24: Most Biologically Diverse Trail
+
+```{r message = FALSE, warning = FALSE}
+# calculate the scores
+max_num_forests <- max(trails_forests$num_forests_crossed)
+max_num_distinct_forests <- max(trails_forests$distinct_forest_type)
+min_avg_distance <- min(trails_forests$distance_to_forest)
+
+trails_forests <- trails_forests %>%
+  mutate(score_num = round(num_forests_crossed*10/max_num_forests),
+         score_distinct = round(distinct_forest_type*10/max_num_distinct_forests),
+         score_avg_distance = round(min_avg_distance*4/distance_to_forest)) %>%
+  mutate(total_score = score_num + score_distinct + score_avg_distance) %>%
+  mutate(level = if_else(total_score > 16, "Most Biologically Diverse Trail", if_else(total_score > 8, "Moderately Biologically Diverse Trail", "Least Biologically Diverse Trail"))) %>%
+  mutate(num_forests_range = if_else(num_forests_crossed > 5, "6 - 10 forests", "1 - 5 forests")) %>%
+  mutate(num_distinct_forests_range = if_else(distinct_forest_type > 4, "5 - 7 types of forests", "1 - 4 types of forests"))
+```
+
+```{r}
+st_geometry(trails_forests) <- NULL
+
+# join trails_forests back to trails_combined
+trails_forests <- full_join(trails_combined, trails_forests, by = c("name" = "name")) 
+```
+
+```{r}
+# change orders of factors in the variable `level`, 'num_forests_range`, and `num_distinct_forests_range`
+trails_forests$level = factor(trails_forests$level, levels = c("Least Biologically Diverse Trail", "Moderately Biologically Diverse Trail", "Most Biologically Diverse Trail"))
+trails_forests$num_forests_range = factor(trails_forests$num_forests_range, levels = c("1 - 5 forests", "6 - 10 forests"))
+trails_forests$num_distinct_forests_range = factor(trails_forests$num_distinct_forests_range, levels = c("1 - 4 types of forests", "5 - 7 types of forests"))
+
+# plot the trails and their levels into the map
+pal_level <- colorFactor(palette = c("red", "blue", "darkgreen"), domain = trails_forests$level)
+pal_range <- colorFactor(palette = c("red", "blue"), domain = trails_forests$num_forests_range)
+pal_distinct <- colorFactor(palette = c("red", "blue"), domain = trails_forests$num_distinct_forests_range)
+
+leaflet(data = trails_forests) %>%
+  addTiles() %>%
+  addPolylines(color = ~pal_level(level), label = ~name, group = "Overall Biodiversity Level", opacity = 0.8) %>%
+  addLegend("bottomright", pal = pal_level, values = ~level, title = "Biodiversity Level", opacity = 1) %>%
+  addPolylines(color = ~pal_range(num_forests_range), label = ~name, group = "Number of Forests", opacity = 0.8) %>%
+  addLegend("bottomright", pal = pal_range, values = ~num_forests_range, title = "Number of Forests crossed", opacity = 1) %>%
+  addPolylines(color = ~pal_distinct(num_distinct_forests_range), label = ~name, group = "Number of Distinct Forest Types", opacity = 0.8) %>%
+  addLegend("bottomright", pal = pal_distinct, values = ~num_distinct_forests_range, title = "Number of Distinct Forest Types seen", opacity = 1) %>%
+  addLayersControl(
+    overlayGroups = c("Overall Biodiversity Level", "Number of Forests", "Number of Distinct Forest Types"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) 
+```
 
 ### Classification of trails by the number of Arts Afield Sites they see
 

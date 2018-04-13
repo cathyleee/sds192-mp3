@@ -139,5 +139,19 @@ From the map, the Easy Out trail is weird because its two segments are not conti
 ```{r}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
+afield_es <- st_transform(arts_afield, crs = st_crs(trails_mapped))
+
+# create buffers of 300m around each Arts Afield site
+proj4_aea <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+afield_buffer <- afield_es %>%
+  st_transform(proj4_aea) %>%
+  st_buffer(dist = 30) %>%
+  st_transform(4326)
+
+leaflet(data = trails_mapped) %>%
+  addTiles() %>%
+  addPolylines(color = ~pal(level), label = ~name) %>%
+  addLegend("bottomright", pal = pal, values = ~level) %>%
+  addMarkers(data=afield_es, popup = ~ident, group="Structures") %>%
+  addPolygons(data = afield_buffer)
 ```
->>>>>>> 754c5f2b17312ac95d667c8f3482e98d03fc8d60

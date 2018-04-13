@@ -260,7 +260,3 @@ leaflet(data = trail_afield_mapped) %>%
 ```
 
 [^github]: https://github.com/cathyleee/sds192-mp3
-<<<<<<< HEAD
-=======
-
->>>>>>> a7d574f756b894e07c64a0a14d8439962c7a1046

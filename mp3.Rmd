@@ -157,9 +157,19 @@ afield_es <- st_transform(arts_afield, crs = st_crs(trails_mapped))
 # create buffers of 300m around each Arts Afield site
 afield_buffer <- afield_es %>%
   st_transform(proj4_aea) %>%
-  st_buffer(dist = 30) %>%
+  st_buffer(dist = 50) %>%
   st_transform(4326)
 
+# calculate intersection of field with Arts Afield Site buffer
+trail_afield_intersect <- st_intersection(trails, afield_buffer) 
+
+# calculate the number of intersections each trail has with Arts Afield Sites
+# In other words, how many Arts Afield Sites are within viewing distance of each trail?
+trail_afield_num_intersect <- trail_afield_intersect %>%
+  group_by(name) %>% 
+  summarise(num_intersections = n())
+
+# Plot the data
 leaflet(data = trails_mapped) %>%
   addTiles() %>%
   addPolylines(color = ~pal(level), label = ~name) %>%

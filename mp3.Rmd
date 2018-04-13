@@ -171,18 +171,29 @@ trail_afield_num_intersect <- trail_afield_intersect %>%
   group_by(name) %>% 
   summarise(num_intersections = n())
 
+st_geometry(trail_afield_plot) <- NULL
+
+# join trail_afield_plot with trails so we aren't just plotting trails within the buffer area
+trail_afield_full <- full_join(trails_combined, trail_afield_plot, by = c("name" = "name"))
+
+# replace null values with 0
+trail_afield_mapped <- trail_afield_full %>% 
+  select(-color) 
+trail_afield_mapped[is.na(trail_afield_mapped)] <- 0
+
 # categorise the number of intersections
-trail_afield_plot <- trail_afield_num_intersect %>%
-  mutate(level = if_else(num_intersections >= 3, "rich", if_else(num_intersections == 2, "moderate", "sparse")))
+trail_afield_mapped <- trail_afield_mapped %>%
+  mutate(level = if_else(num_intersections >= 3, "Many Arts Afield Sites", if_else(num_intersections >= 1, "Moderate Arts Afield Sites", "No Arts Afield Sites")))
+
 # change the order of factors in the variable `level`
-trail_afield_plot$level = factor(trail_afield_plot$level, levels=c("sparse, moderate, rich"))
+trail_afield_mapped$level = factor(trail_afield_mapped$level, levels=c("No Arts Afield Sites", "Moderate Arts Afield Sites", "Many Arts Afield Sites"))
 # plot the trails and their levels into the map
-pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afield_plot$level)
+pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afield_mapped$level)
 
 # Plot the data
-leaflet(data = trails_mapped) %>%
+leaflet(data = trail_afield_mapped) %>%
   addTiles() %>%
-  addPolylines(color = ~pal(level), label = ~name) %>%
+  addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
   addLegend("bottomright", pal = pal, values = ~level) %>%
   addMarkers(data=afield_es, popup = ~ident, group="Structures") %>%
   addPolygons(data = afield_buffer)

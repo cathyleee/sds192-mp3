@@ -10,6 +10,7 @@ output:
 
 ### Introduction and setup
 
+Please see our Github repository for more details on this project.[^github]
 Talk about `Macleish` package here.
 ```{r message = FALSE, warning = FALSE}
 # load the libraries and data
@@ -178,6 +179,8 @@ leaflet(data = trails_mapped) %>%
   addMarkers(data=afield_es, popup = ~ident, group="Structures") %>%
   addPolygons(data = afield_buffer)
 ```
+
+[^github]: https://github.com/cathyleee/sds192-mp3
 <<<<<<< HEAD
 =======
 

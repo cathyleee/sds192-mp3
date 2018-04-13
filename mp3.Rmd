@@ -10,6 +10,7 @@ output:
 
 ### Introduction and setup
 
+Please see our Github repository for more details on this project.[^github]
 Talk about `Macleish` package here.
 ```{r message = FALSE, warning = FALSE}
 # load the libraries and data
@@ -18,6 +19,7 @@ library(tidyverse)
 library(sf)
 library(macleish)
 library(leaflet)
+proj4_aea <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 ```
 
 ### Classification of existing trails by level of difficulty based on length and elevation change
@@ -208,5 +210,57 @@ leaflet(data = trails_forests) %>%
 ```{r}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
+afield_es <- st_transform(arts_afield, crs = st_crs(trails_mapped))
+
+# create buffers of 300m around each Arts Afield site
+afield_buffer <- afield_es %>%
+  st_transform(proj4_aea) %>%
+  st_buffer(dist = 50) %>%
+  st_transform(4326)
+
+# calculate intersection of field with Arts Afield Site buffer
+trail_afield_intersect <- st_intersection(trails, afield_buffer) 
+
+# calculate the number of intersections each trail has with Arts Afield Sites
+# In other words, how many Arts Afield Sites are within viewing distance of each trail?
+trail_afield_num_intersect <- trail_afield_intersect %>%
+  group_by(name) %>% 
+  summarise(num_intersections = n())
+
+st_geometry(trail_afield_plot) <- NULL
+
+# join trail_afield_plot with trails so we aren't just plotting trails within the buffer area
+trail_afield_full <- full_join(trails_combined, trail_afield_plot, by = c("name" = "name"))
+
+# replace null values with 0
+trail_afield_mapped <- trail_afield_full %>% 
+  select(-color) 
+trail_afield_mapped[is.na(trail_afield_mapped)] <- 0
+
+# categorise the number of intersections
+trail_afield_mapped <- trail_afield_mapped %>%
+  mutate(level = if_else(num_intersections >= 3, "Many Arts Afield Sites", if_else(num_intersections >= 1, "Moderate Arts Afield Sites", "No Arts Afield Sites")))
+
+# change the order of factors in the variable `level`
+trail_afield_mapped$level = factor(trail_afield_mapped$level, levels=c("No Arts Afield Sites", "Moderate Arts Afield Sites", "Many Arts Afield Sites"))
+# plot the trails and their levels into the map
+pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afield_mapped$level)
+
+# Plot the data
+leaflet(data = trail_afield_mapped) %>%
+  addTiles() %>%
+  addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
+  addLegend("bottomright", pal = pal, values = ~level) %>%
+  addMarkers(data=afield_es, popup = ~ident, group="Arts Afield Sites") %>%
+  addPolygons(data = afield_buffer, group="Arts Afield Sites") %>%
+  addLayersControl(
+    overlayGroups = c("Trails", "Arts Afield Sites"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
 ```
 
+[^github]: https://github.com/cathyleee/sds192-mp3
+<<<<<<< HEAD
+=======
+
+>>>>>>> a7d574f756b894e07c64a0a14d8439962c7a1046

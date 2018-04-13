@@ -121,7 +121,7 @@ In the map, we added layer control for trails and 10' contours. We plotted the c
 We can see there is a positive correlation between the lengths of the trails and the difficulty level. Obviously, length contribute half of the difficulty in our heuristic, but also the longer trails tend to be closer to the inside of Macleish, which mean they are more likely to cross higher contours. Also, because they are longer, they cut a lot more different contours constantly, which means they change their elevations more often, making it harder to hike/bike on those trails. 
 
 ### Classification of trails by biodiversity/vegetation
-```{r}
+```{r warning=FALSE, message=FALSE}
 # join the two sf data frames to find intersection between trails and forests
 trails_forests <- st_intersection(trails_combined,
                 macleish_layers[["forests"]]) 
@@ -205,9 +205,9 @@ leaflet(data = trails_forests) %>%
   ) 
 ```
 
-### Classification of trails by the number of Arts Afield Sites they see
+### Classification of trails by the number of Arts Afield Sites within viewing distance
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
 afield_es <- st_transform(arts_afield, crs = st_crs(trails_mapped))

@@ -1,59 +1,42 @@
 ---
-title: "mp3"
+title: "Mini Project 3: CLASSIFICATION OF TRAILS BY DIFFERENT FACTORS"
 author: "Cathy Lee, Lizette Carpenter, Ha Cao"
 date: "7 April 2018"
 output: 
   html_document:
-     code_folding: hide
+    theme: united
+    code_folding: hide
 ---
-```{r message = FALSE}
+
+### Introduction and setup
+
+Talk about `Macleish` package here.
+```{r message = FALSE, warning = FALSE}
 # load the libraries and data
 #devtools::install_github("beanumber/macleish")
 library(tidyverse)
 library(sf)
 library(macleish)
 library(leaflet)
-#packageVersion("macleish")
 ```
 
 ### Classification of existing trails by level of difficulty based on length and elevation change
-```{r message = FALSE}
-# explore the data
-names(macleish_layers)
-# trails is existing trails shapefile
-# forests is vegetation type shapefile
-```
-
-```{r message = FALSE}
+```{r message = FALSE, warning = FALSE}
 trails <- macleish_layers[["trails"]] %>%
   mutate(computed_length = st_length(geometry))
-```
 
-```{r}
 # group trails with the same name
 trails_combined <- trails %>%
   group_by(name) %>%
   summarize(color = first(color),
             length = sum(computed_length))
-```
 
-```{r message = FALSE}
-# join the two sf data frames
+# join the two sf data frames to find intersection between trails and contours
+# ELEV_M is elevation above or below sea level, in meters
 trails_intersect <- st_intersection(trails_combined,
                 macleish_layers[["contours_3m"]]) %>%
   st_cast("POINT") 
-# ELEV_M is elevation above or below sea level, in meters
-```
 
-```{r message = FALSE}
-primitive_plot <- leaflet() %>%
-  addTiles() %>%
-  addPolylines(data = trails_combined, weight = 1, color = "black") %>%
-  addPolylines(data = macleish_layers[["contours_3m"]], weight = 1, color = "red")
-primitive_plot 
-```
-
-```{r message = FALSE}
 # summarize to see for each trail, how many times it changes its elevation, what is the highest/lowest contour, and what is the mean change in height
 trails_change_elevation <- trails_intersect %>%
   group_by(name) %>%
@@ -61,14 +44,12 @@ trails_change_elevation <- trails_intersect %>%
             min_height = min(ELEV_M),
             max_height = max(ELEV_M)) %>%
   mutate(mean_change = (max_height - min_height)/num_change)
-```
 
-```{r message = FALSE}
 # join trails_change_Elevation back to trails_intersect
 trails_intersect <- st_join(trails_intersect, trails_change_elevation)
 ```
 
-Our heuristic to rate the difficulty level of trails
+Our heuristic to rate the difficulty level of trails:
 
 * Length: We rate this in the scale of 10. The longest trail (2575.217 m) has length score 10/10. We calculate the scores for the other trails by dividing their length by the biggest length and multiplying by 10, and round up to integers. 
 
@@ -80,11 +61,11 @@ Our heuristic to rate the difficulty level of trails
 
 Then we sum the partial scores into the total score in the scale of 20:
 
-- From 0 - 7: Easy Trail
-- From 8 - 14: Moderate Trail
-- From 15- 20: Hard Trail
+* From 0 - 7: Easy Trail
+* From 8 - 14: Moderate Trail
+* From 15- 20: Hard Trail
 
-```{r message = FALSE}
+```{r message = FALSE, warning = FALSE}
 trails_intersect$length <- as.numeric(trails_intersect$length, "")
 # calculate the scores
 max_length <- max(trails_intersect$length)
@@ -97,9 +78,7 @@ trails_intersect <- trails_intersect %>%
          score_mean = round(mean_change*5/max_mean_change)) %>%
   mutate(total_score = score_length + score_num + score_mean) %>%
   mutate(level = if_else(total_score > 14, "hard", if_else(total_score > 7, "moderate", "easy"))) 
-```
 
-```{r message = FALSE}
 # summarize into a shorter version
 trails_short <- trails_intersect %>%
   group_by(name.x) %>%
@@ -120,24 +99,58 @@ marker_points <- trails_mapped %>%
 trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 
 # plot the trails and their levels into the map
-pal <- colorFactor(palette = c("blue", "yellow", "red"), domain = trails_mapped$level)
+pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trails_mapped$level)
+
+pal_contours <- colorNumeric(palette = "viridis", domain = macleish_layers[["contours_3m"]]$ELEV, reverse = TRUE)
 
 leaflet(data = trails_mapped) %>%
   addTiles() %>%
-  addPolylines(color = ~pal(level), label = ~name) %>%
-  addLegend("bottomright", pal = pal, values = ~level)
+  addPolylines(data = macleish_layers[["contours_3m"]], color = ~pal_contours(ELEV_M), weight = 2, group = "10' Contours") %>%
+  addLegend("bottomleft", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
+  addPolylines(color = ~pal(level), label = ~name, group = "Trails", opacity = 0.8) %>%
+  addLegend("bottomright", pal = pal, values = ~level, title = "Difficulty Level", opacity = 1) %>%
+  addLayersControl(
+    overlayGroups = c("Trails", "10' Contours"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) 
 
 # we may want to add layer contours into this map using layer control
 ```
 
 From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
 
-<<<<<<< HEAD
-### Classification of trails by biodiversity/vegetation
+In the map, we added layer control for trails and 10' contours. We plotted the contours such that they change color by elevation. The darker colors (closer to purple) mean higher elevations, and the lighter colosr (further away from purple) mean lower elevations. The elevation increases as we approach the inside of Macleish.
 
-=======
+We can see there is a positive correlation between the lengths of the trails and the difficulty level. Obviously, length contribute half of the difficulty in our heuristic, but also the longer trails tend to be closer to the inside of Macleish, which mean they are more likely to cross higher contours. Also, because they are longer, they cut a lot more different contours constantly, which means they change their elevations more often, making it harder to hike/bike on those trails. 
+
+### Classification of trails by biodiversity/vegetation
+```{r}
+# join the two sf data frames to find intersection between trails and forests
+trails_forests <- st_intersection(trails_combined,
+                macleish_layers[["forests"]])
+
+# rename the variable Sheet__NA to be more telling
+
+```
+
+```{r}
+forest_buffer <- macleish_layers[["forests"]] %>%
+  st_transform(proj4_aea) %>%
+  st_buffer(dist = 10) %>%
+  st_transform(4326)
+
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data = macleish_layers[["forests"]], 
+               weight = 1, color = "black") 
+```
+
+
+
+### Classification of trails by the number of Arts Afield Sites they see
+
 ```{r}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
 ```
->>>>>>> 754c5f2b17312ac95d667c8f3482e98d03fc8d60
+

@@ -227,7 +227,7 @@ trail_afield_num_intersect <- trail_afield_intersect %>%
   group_by(name) %>% 
   summarise(num_intersections = n())
 
-st_geometry(trail_afield_plot) <- NULL
+st_geometry(trail_afield_num_intersect) <- NULL
 
 # join trail_afield_plot with trails so we aren't just plotting trails within the buffer area
 trail_afield_full <- full_join(trails_combined, trail_afield_plot, by = c("name" = "name"))

@@ -239,10 +239,10 @@ trail_afield_mapped[is.na(trail_afield_mapped)] <- 0
 
 # categorise the number of intersections
 trail_afield_mapped <- trail_afield_mapped %>%
-  mutate(level = if_else(num_intersections >= 3, "Many Arts Afield Sites", if_else(num_intersections >= 1, "Moderate Arts Afield Sites", "No Arts Afield Sites")))
+  mutate(level = if_else(num_intersections >= 3, "3-4 Arts Afield Sites", if_else(num_intersections >= 1, "1-2 Arts Afield Sites", "0 Arts Afield Sites")))
 
 # change the order of factors in the variable `level`
-trail_afield_mapped$level = factor(trail_afield_mapped$level, levels=c("No Arts Afield Sites", "Moderate Arts Afield Sites", "Many Arts Afield Sites"))
+trail_afield_mapped$level = factor(trail_afield_mapped$level, levels=c("0 Arts Afield Sites", "1-2 Arts Afield Sites", "3-4 Arts Afield Sites"))
 # plot the trails and their levels into the map
 pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afield_mapped$level)
 

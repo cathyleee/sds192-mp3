@@ -105,11 +105,15 @@ pal_contours <- colorNumeric(palette = "viridis", domain = macleish_layers[["con
 
 leaflet(data = trails_mapped, width = "100%") %>%
   addTiles() %>%
+  addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
   addPolylines(data = macleish_layers[["contours_3m"]], color = ~pal_contours(ELEV_M), weight = 2, group = "10' Contours") %>%
   addLegend("bottomright", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
   addPolylines(color = ~pal(level), label = ~name, group = "Trails", opacity = 0.8) %>%
   addLegend("bottomright", pal = pal, values = ~level, title = "Difficulty Level", opacity = 1) %>%
   addLayersControl(
+    baseGroups = c("OpenStreetMap", "Topography", "Satellite", "Toner Lite"),
     overlayGroups = c("Trails", "10' Contours"),
     options = layersControlOptions(collapsed = FALSE)
   ) 
@@ -181,14 +185,18 @@ pal_distinct <- colorFactor(palette = c("red", "blue"), domain = trails_forests$
 
 leaflet(data = trails_forests, width = "100%") %>%
   addTiles() %>%
+  addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
   addPolygons(data = macleish_layers[["forests"]], color = "lightgreen", weight = 1, fillOpacity = 0.5, group = "Forests", label = ~Sheet1__Na) %>%
   addPolylines(color = ~pal_level(level), label = ~name, group = "Overall Biodiversity Level", opacity = 0.8) %>%
-  addLegend("bottomright", pal = pal_level, values = ~level, title = "Biodiversity Level", opacity = 1) %>%
+  addLegend("bottomleft", pal = pal_level, values = ~level, title = "Biodiversity Level", opacity = 1) %>%
   addPolylines(color = ~pal_range(num_forests_range), label = ~name, group = "Number of Forests", opacity = 0.8) %>%
-  addLegend("bottomright", pal = pal_range, values = ~num_forests_range, title = "Number of Forests crossed", opacity = 1) %>%
+  addLegend("bottomleft", pal = pal_range, values = ~num_forests_range, title = "Number of Forests crossed", opacity = 1) %>%
   addPolylines(color = ~pal_distinct(num_distinct_forests_range), label = ~name, group = "Number of Distinct Forest Types", opacity = 0.8) %>%
-  addLegend("bottomright", pal = pal_distinct, values = ~num_distinct_forests_range, title = "Number of Distinct Forest Types seen", opacity = 1) %>%
+  addLegend("bottomleft", pal = pal_distinct, values = ~num_distinct_forests_range, title = "Number of Distinct Forest Types seen", opacity = 1) %>%
   addLayersControl(
+    baseGroups = c("OpenStreetMap", "Topography", "Satellite", "Toner Lite"),
     overlayGroups = c("Overall Biodiversity Level", "Number of Forests", "Number of Distinct Forest Types", "Forests"),
     options = layersControlOptions(collapsed = FALSE)
   ) 
@@ -248,11 +256,15 @@ pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afie
 # plot the data
 leaflet(data = trail_afield_mapped, width = "100%") %>%
   addTiles() %>%
+  addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
   addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
   addLegend("bottomright", pal = pal, values = ~level) %>%
   addMarkers(data=afield_es, popup = ~ident, group="Arts Afield Sites") %>%
   addPolygons(data = afield_buffer, group="Arts Afield Sites") %>%
   addLayersControl(
+    baseGroups = c("OpenStreetMap", "Topography", "Satellite", "Toner Lite"),
     overlayGroups = c("Trails", "Arts Afield Sites"),
     options = layersControlOptions(collapsed = FALSE)
   )

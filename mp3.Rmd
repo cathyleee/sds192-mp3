@@ -93,7 +93,7 @@ st_geometry(trails_short) <- NULL
 trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x")) 
 ```
 
-```{r message = FALSE}
+```{r message = FALSE, warning = FALSE}
 # change orders of factors in the variable `level`
 trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 
@@ -102,7 +102,7 @@ pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trails_map
 
 pal_contours <- colorNumeric(palette = "viridis", domain = macleish_layers[["contours_3m"]]$ELEV, reverse = TRUE)
 
-leaflet(data = trails_mapped) %>%
+leaflet(data = trails_mapped, width = "100%") %>%
   addTiles() %>%
   addPolylines(data = macleish_layers[["contours_3m"]], color = ~pal_contours(ELEV_M), weight = 2, group = "10' Contours") %>%
   addLegend("bottomright", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
@@ -121,7 +121,7 @@ In the map, we added layer control for trails and 10' contours. We plotted the c
 We can see there is a positive correlation between the lengths of the trails and the difficulty level. Obviously, length contribute half of the difficulty in our heuristic, but also the longer trails tend to be closer to the inside of Macleish, which mean they are more likely to cross higher contours. Also, because they are longer, they cut a lot more different contours constantly, which means they change their elevations more often, making it harder to hike/bike on those trails. 
 
 ### Classification of trails by biodiversity/vegetation
-```{r}
+```{r message = FALSE, warning = FALSE, echo, include = FALSE}
 # join the two sf data frames to find intersection between trails and forests
 trails_forests <- st_intersection(trails_combined,
                 macleish_layers[["forests"]]) 
@@ -130,7 +130,7 @@ trails_forests <- trails_forests %>%
   rename(forest_type = Sheet1__Na) # rename to make the variable name more telling
 ```
 
-```{r}
+```{r message = FALSE, warning = FALSE}
 # find how many forests each trail passes by and how many unique forest types it passes by
 trails_forests$length <- as.numeric(trails_forests$length, "")
 trails_forests <- trails_forests %>%
@@ -173,14 +173,14 @@ trails_forests <- trails_forests %>%
   mutate(num_distinct_forests_range = if_else(distinct_forest_type > 4, "5 - 7 types of forests", "1 - 4 types of forests"))
 ```
 
-```{r}
+```{r message = FALSE, warning = FALSE}
 st_geometry(trails_forests) <- NULL
 
 # join trails_forests back to trails_combined
 trails_forests <- full_join(trails_combined, trails_forests, by = c("name" = "name")) 
 ```
 
-```{r}
+```{r message = FALSE, warning = FALSE}
 # change orders of factors in the variable `level`, 'num_forests_range`, and `num_distinct_forests_range`
 trails_forests$level = factor(trails_forests$level, levels = c("Least Biologically Diverse Trail", "Moderately Biologically Diverse Trail", "Most Biologically Diverse Trail"))
 trails_forests$num_forests_range = factor(trails_forests$num_forests_range, levels = c("1 - 5 forests", "6 - 10 forests"))
@@ -191,8 +191,9 @@ pal_level <- colorFactor(palette = c("red", "blue", "darkgreen"), domain = trail
 pal_range <- colorFactor(palette = c("red", "blue"), domain = trails_forests$num_forests_range)
 pal_distinct <- colorFactor(palette = c("red", "blue"), domain = trails_forests$num_distinct_forests_range)
 
-leaflet(data = trails_forests) %>%
+leaflet(data = trails_forests, width = "100%") %>%
   addTiles() %>%
+  addPolygons(data = macleish_layers[["forests"]], color = "lightgreen", weight = 1, fillOpacity = 0.5, group = "Forests", label = ~Sheet1__Na) %>%
   addPolylines(color = ~pal_level(level), label = ~name, group = "Overall Biodiversity Level", opacity = 0.8) %>%
   addLegend("bottomright", pal = pal_level, values = ~level, title = "Biodiversity Level", opacity = 1) %>%
   addPolylines(color = ~pal_range(num_forests_range), label = ~name, group = "Number of Forests", opacity = 0.8) %>%
@@ -200,14 +201,14 @@ leaflet(data = trails_forests) %>%
   addPolylines(color = ~pal_distinct(num_distinct_forests_range), label = ~name, group = "Number of Distinct Forest Types", opacity = 0.8) %>%
   addLegend("bottomright", pal = pal_distinct, values = ~num_distinct_forests_range, title = "Number of Distinct Forest Types seen", opacity = 1) %>%
   addLayersControl(
-    overlayGroups = c("Overall Biodiversity Level", "Number of Forests", "Number of Distinct Forest Types"),
+    overlayGroups = c("Overall Biodiversity Level", "Number of Forests", "Number of Distinct Forest Types", "Forests"),
     options = layersControlOptions(collapsed = FALSE)
   ) 
 ```
 
 ### Classification of trails by the number of Arts Afield Sites they see
 
-```{r}
+```{r message = FALSE, warning = FALSE, include = FALSE}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
 afield_es <- st_transform(arts_afield, crs = st_crs(trails_mapped))
@@ -245,9 +246,11 @@ trail_afield_mapped <- trail_afield_mapped %>%
 trail_afield_mapped$level = factor(trail_afield_mapped$level, levels=c("No Arts Afield Sites", "Moderate Arts Afield Sites", "Many Arts Afield Sites"))
 # plot the trails and their levels into the map
 pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afield_mapped$level)
+```
 
+```{r}
 # Plot the data
-leaflet(data = trail_afield_mapped) %>%
+leaflet(data = trail_afield_mapped, width = "100%") %>%
   addTiles() %>%
   addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
   addLegend("bottomright", pal = pal, values = ~level) %>%

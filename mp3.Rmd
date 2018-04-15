@@ -1,6 +1,6 @@
 ---
-title: "Mini Project 3: CLASSIFICATION OF TRAILS BY DIFFERENT FACTORS"
-author: "Cathy Lee, Lizette Carpenter, Ha Cao"
+title: "Mini Project 3: CLASSIFICATION OF MACLEISH TRAILS BY DIFFERENT FACTORS"
+author: "Cathy Lee, Ha Cao, Lizette Carpenter"
 date: "7 April 2018"
 output: 
   html_document:
@@ -11,7 +11,10 @@ output:
 ### Introduction and setup
 
 Please see our Github repository for more details on this project.[^github]
-Talk about `Macleish` package here.
+
+Smith maintains Macleish Field Station in West Whately, MA that provides opportunities for faculty and students to pursue environmental research, outdoor education, and low-impact creation. The data we use in this project is from `macleish` package retrieved from the station, and you can read official documentation about it [here](https://cran.r-project.org/web/packages/macleish/macleish.pdf).
+
+**Problem Statement**: After talking to Professor Bertone-Johnson about what kinds of classification of the trails in use by field station visitors he would be interested to know, in addition to their **difficulty level**, we have decided to classify the existing trails based on their **biodiversity** (forests that they pass through) and **the number of Arts Afield Sites** within their viewing distance as well. 
 ```{r message = FALSE, warning = FALSE}
 # load the libraries and data
 #devtools::install_github("beanumber/macleish")
@@ -23,7 +26,20 @@ proj4_aea <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y
 ```
 
 ### Classification of existing trails by level of difficulty based on length and elevation change
+
+According to this [rating system](https://www.nps.gov/shen/planyourvisit/how-to-determine-hiking-difficulty.htm) by National Park Service, all these trails would be rated as "Easy", so we developed our own heuristic that makes the difficulty level relative to Macleish only:
+
+* Length: We rate this in the scale of 10. The longest trail (2575.217 m) has length score 10/10. We calculate the scores for the other trails by dividing their length by the biggest length and multiplying by 10, and round up to integers.
+
+* Elevation: This is broken down into 2 factors: the number of times a trail changes its elevation and the mean change in height each time (by dividing the difference between the maximum and minimum elevation by the number of changes in elevation). Each of these 2 factors are measured in the scale of 5, so they sum up to the scale of 10. The more often a trail changes its elevation, and/or the bigger the changes are, the more difficult it is for hikers/bikers. 
+
+Then we sum the partial scores into the total score in the scale of 20:
+
+* From 0 - 7: Easy Trail
+* From 8 - 14: Moderate Trail
+* From 15- 20: Hard Trail
 ```{r message = FALSE, warning = FALSE}
+# create the length variable of the trails
 trails <- macleish_layers[["trails"]] %>%
   mutate(computed_length = st_length(geometry))
 
@@ -49,26 +65,10 @@ trails_change_elevation <- trails_intersect %>%
 
 # join trails_change_Elevation back to trails_intersect
 trails_intersect <- st_join(trails_intersect, trails_change_elevation)
-```
 
-Our heuristic to rate the difficulty level of trails:
-
-* Length: We rate this in the scale of 10. The longest trail (2575.217 m) has length score 10/10. We calculate the scores for the other trails by dividing their length by the biggest length and multiplying by 10, and round up to integers. 
-
-* Elevation: This has 2 smaller factors: the number of times a trail changes in elevation and the mean change in height each time. Each of these 2 factors are measured in the scale of 5, so they sum up to the scale of 10. 
-
-- The trail with the most changes in elevation has a score of 5.
-
-- The trail with the biggest mean change has a score of 5. 
-
-Then we sum the partial scores into the total score in the scale of 20:
-
-* From 0 - 7: Easy Trail
-* From 8 - 14: Moderate Trail
-* From 15- 20: Hard Trail
-
-```{r message = FALSE, warning = FALSE}
+# transform the length variable from factor to numeric 
 trails_intersect$length <- as.numeric(trails_intersect$length, "")
+
 # calculate the scores
 max_length <- max(trails_intersect$length)
 max_num_change <- max(trails_intersect$num_change)
@@ -91,9 +91,7 @@ st_geometry(trails_short) <- NULL
 
 # join trails_short back to trails_combined
 trails_mapped <- full_join(trails_combined, trails_short, by = c("name" = "name.x")) 
-```
 
-```{r message = FALSE, warning = FALSE}
 # change orders of factors in the variable `level`
 trails_mapped$level = factor(trails_mapped$level, levels = c("easy", "moderate", "hard"))
 
@@ -113,14 +111,25 @@ leaflet(data = trails_mapped, width = "100%") %>%
     options = layersControlOptions(collapsed = FALSE)
   ) 
 ```
-
-From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Reid, it turns out that it is just a little connector that allows people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
-
-In the map, we added layer control for trails and 10' contours. We plotted the contours such that they change color by elevation. The darker colors (closer to purple) mean higher elevations, and the lighter colosr (further away from purple) mean lower elevations. The elevation increases as we approach the inside of Macleish.
+From the map, the Easy Out trail is weird because its two segments are not continuous. After we asked Professor Bertone-Johnson, it turns out that they're just little connectors that allow people to get out to the Eastern Loop trail without continuing around the loops of the other trails.
 
 We can see there is a positive correlation between the lengths of the trails and the difficulty level. Obviously, length contribute half of the difficulty in our heuristic, but also the longer trails tend to be closer to the inside of Macleish, which mean they are more likely to cross higher contours. Also, because they are longer, they cut a lot more different contours constantly, which means they change their elevations more often, making it harder to hike/bike on those trails. 
 
 ### Classification of trails by biodiversity/vegetation
+
+Our heuristic to rate the biodiversity/vegetation of trails:
+
+* Number of forests each trail comes across: We rate this in the scale of 10, and conduct rating in the same way as for difficulty level. This indicates how many times the trail changes its natural scenery.
+
+* Number of distinct forest types each trail passes through: We rate this in the scale of 10. This shows how diverse the vegetation along the trail is. 
+
+* Average distance between forests: We rate this in the scale of 4, because even the longest average distance 367.89 m (length/number of forests) is pretty small and within walking distance, so we weigh this factor less. The trail with the shortest average distance has the score of 4. We want to include this because we want to make the number of forests along the trail relative to its length, because obviously longer trails are likely to go through more forests. 
+
+Then we sum the partial scores into the total score in the scale of 20:
+
+* From 0 - 8: Least Biologically Diverse Trail
+* From 9 - 16: More Biologically Diverse Trail
+* From 17- 24: Most Biologically Diverse Trail
 ```{r message = FALSE, warning = FALSE, echo, include = FALSE}
 # join the two sf data frames to find intersection between trails and forests
 trails_forests <- st_intersection(trails_combined,
@@ -128,9 +137,7 @@ trails_forests <- st_intersection(trails_combined,
 addNA(trails_forests$Sheet1__Na)
 trails_forests <- trails_forests %>%
   rename(forest_type = Sheet1__Na) # rename to make the variable name more telling
-```
 
-```{r message = FALSE, warning = FALSE}
 # find how many forests each trail passes by and how many unique forest types it passes by
 trails_forests$length <- as.numeric(trails_forests$length, "")
 trails_forests <- trails_forests %>%
@@ -141,23 +148,7 @@ trails_forests <- trails_forests %>%
             length = first(length)) %>%
 # add a variable to show distance hikers/bikers have to go to see a forest
   mutate(distance_to_forest = length/num_forests_crossed)
-```
 
-Our heuristic to rate the biodiversity/vegetation of trails:
-
-* Number of forests each trail comes across: We rate this in the scale of 10. The trail that goes through most forests (11) has score 10/10. We calculate the scores for the other trails by dividing their number of forests crossed by the biggest number of forests crossed and multiplying by 10, and round up to integers. This indicates how many times the trail changes its natural scenery.
-
-* Number of distinct forest types each trail comes across: We rate this in the scale of 10. The trail goes through most diverse types of forest (7) has score 10/10. We calculate the scores in the same way above. This shows how diverse the vegetation along the trail is. 
-
-* Average distance between forests: We rate this in the scale of 4, because even the longest average distance 367.89 m (length/number of forests) is pretty small and within walking distance, so we weigh it less. The trail with the shortest average distance has the score of 4. We want to include this because we want to make the number of forests along the trail relative to its length, because obviously longer trails are likely to come across more forests. 
-
-Then we sum the partial scores into the total score in the scale of 20:
-
-* From 0 - 8: Least Biologically Diverse Trail
-* From 9 - 16: More Biologically Diverse Trail
-* From 17- 24: Most Biologically Diverse Trail
-
-```{r message = FALSE, warning = FALSE}
 # calculate the scores
 max_num_forests <- max(trails_forests$num_forests_crossed)
 max_num_distinct_forests <- max(trails_forests$distinct_forest_type)
@@ -171,21 +162,18 @@ trails_forests <- trails_forests %>%
   mutate(level = if_else(total_score > 16, "Most Biologically Diverse Trail", if_else(total_score > 8, "Moderately Biologically Diverse Trail", "Least Biologically Diverse Trail"))) %>%
   mutate(num_forests_range = if_else(num_forests_crossed > 5, "6 - 10 forests", "1 - 5 forests")) %>%
   mutate(num_distinct_forests_range = if_else(distinct_forest_type > 4, "5 - 7 types of forests", "1 - 4 types of forests"))
-```
 
-```{r message = FALSE, warning = FALSE}
 st_geometry(trails_forests) <- NULL
 
 # join trails_forests back to trails_combined
 trails_forests <- full_join(trails_combined, trails_forests, by = c("name" = "name")) 
-```
-
-```{r message = FALSE, warning = FALSE}
 # change orders of factors in the variable `level`, 'num_forests_range`, and `num_distinct_forests_range`
 trails_forests$level = factor(trails_forests$level, levels = c("Least Biologically Diverse Trail", "Moderately Biologically Diverse Trail", "Most Biologically Diverse Trail"))
 trails_forests$num_forests_range = factor(trails_forests$num_forests_range, levels = c("1 - 5 forests", "6 - 10 forests"))
 trails_forests$num_distinct_forests_range = factor(trails_forests$num_distinct_forests_range, levels = c("1 - 4 types of forests", "5 - 7 types of forests"))
+```
 
+```{r}
 # plot the trails and their levels into the map
 pal_level <- colorFactor(palette = c("red", "blue", "darkgreen"), domain = trails_forests$level)
 pal_range <- colorFactor(palette = c("red", "blue"), domain = trails_forests$num_forests_range)
@@ -206,8 +194,13 @@ leaflet(data = trails_forests, width = "100%") %>%
   ) 
 ```
 
+From the map, we can see that the most biologically diverse trails are the looping ones like Eastern/Western loops. The least biologically diverse trails are part of Easy Out trail, which makes perfect sense because they are so short and are just connectors, meaning they were not built for the purpose of exploring the nature, but to help facilitate the traffic. 
+
 ### Classification of trails by the number of Arts Afield Sites within viewing distance
 
+For this, we used the external data about Arts Afield Sites that were provided by Professor Bertone-Johnson. We'll put these data into our Github so that you can run the codes later. 
+
+The heuristic for this classificiation is simpler because the number of Arts Afield Sites within viewing distance (50 meters) for each trail is pretty small, so we just categorize the trails into 0, 1-2, and 3-4 sites. If visitors take the trails that are close to a lot of arts sites, it will be more convenient for them to visit these sites if they are interested in arts.  
 ```{r message = FALSE, warning = FALSE, include = FALSE}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
@@ -249,7 +242,7 @@ pal <- colorFactor(palette = c("darkorange", "blue", "red"), domain = trail_afie
 ```
 
 ```{r}
-# Plot the data
+# plot the data
 leaflet(data = trail_afield_mapped, width = "100%") %>%
   addTiles() %>%
   addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
@@ -261,5 +254,9 @@ leaflet(data = trail_afield_mapped, width = "100%") %>%
     options = layersControlOptions(collapsed = FALSE)
   )
 ```
+
+### Recommendations
+
+Macleish is building a new kiosk for the field station and will be posting materials that are useful to visitors. **Our classifications by difficulty level, biodiversity, and arts sites can be used to build a detailed, all-inclusive guide for visitors**. They might be out for a bird watching walk and be interested in biodiversity of the habitats they will be seeing. They might be artists interested in the Arts Afield sites. They might be up for a challenge in their hike or out for a leisurely stroll. A personalized and detailed tour guide with these classifications will help visitors make more informed choices, which can optimize the use of their time and provide them with a more individual and meaningful experience. Our classifications are highly scalable, meaning that you can do similar classifications for other factors once more data about Macleish are available. To implement this guidebook for visitors will not cost much resource such as time and money, but can create great impact by making it much easier and more enjoyable for people, including researchers, students, etc. to visit Macleish, thereby attracting more visitors to the place. For a field station like Macleish, being able to attract a lot of visitors is key to its sustainability, development, and contribution to academia. 
 
 [^github]: https://github.com/cathyleee/sds192-mp3

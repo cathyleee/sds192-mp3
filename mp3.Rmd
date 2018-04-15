@@ -17,7 +17,6 @@ Smith maintains Macleish Field Station in West Whately, MA that provides opportu
 **Problem Statement**: After talking to Professor Bertone-Johnson about what kinds of classification of the trails in use by field station visitors he would be interested to know, in addition to their **difficulty level**, we have decided to classify the existing trails based on their **biodiversity** (forests that they pass through) and **the number of Arts Afield Sites** within their viewing distance as well. 
 ```{r message = FALSE, warning = FALSE}
 # load the libraries and data
-#devtools::install_github("beanumber/macleish")
 library(tidyverse)
 library(sf)
 library(macleish)

@@ -14,7 +14,6 @@ Please see our Github repository for more details on this project.[^github]
 Talk about `Macleish` package here.
 ```{r message = FALSE, warning = FALSE}
 # load the libraries and data
-#devtools::install_github("beanumber/macleish")
 library(tidyverse)
 library(sf)
 library(macleish)

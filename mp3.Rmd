@@ -12,10 +12,7 @@ output:
 
 Please see our Github repository[^github] for more details on this project.
 
-**Problem Statement:** Our objective is to assign difficulty levels (easy, moderate, or hard) to the MacLeish trails based on length, steepness, and terrain consistency. 
-
-After talking to Professor Bertone Johnson about possible classifications of the trails besides difficulty level, we decided to additionally classify the trails based on biodiversity and proximity to Arts Afield Sites.
-
+**Problem Statement:** Besides assigning difficulty levels to the MacLeish trails based on length and elevation, we decided to classify the trails based on biodiversity and proximity to Arts Afield Sites after talking to Professor Bertone Johnson about other possible classifications.
 
 ```{r message=FALSE, warning=FALSE}
 # load the libraries and data
@@ -32,8 +29,9 @@ We computed the lengths of each MacLeish trail, and combined them with the 10’
 
 * **Length:** Rated out of 10; the longest trail (2575.217m) has a score of 10, and the scores of other trails are calculated by dividing their length by the largest length, multiplying by 10, and rounding up to an integer. 
 * **Elevation:** Rated out of 10.
-    - **Steepness:** Rated out of 5; the steepest trail scores 5. The mean change in elevation in a trail.
-    - **Terrain consistency:** Rated out of 5; the most uneven trail scores 5. The number of elevation changes in a trail.
+    - Average change in elevation: Rated out of 5; the trail with the biggest average change in elevation scores 5.
+    - Number of elevation changes: Rated out of 5; the trail with the most elevation changes scores 5.
+
 
 We summed the partial scores and scored difficulty out of 20:
 
@@ -114,6 +112,8 @@ leaflet(data = trails_mapped, width = "100%") %>%
     options = layersControlOptions(collapsed = FALSE)
   ) 
 ```
+The map shows an anomaly: two segments in the Easy Out trail are not continuous; after consulting Professor Bertone-Johnson, we found out that they are connectors allowing access to the Eastern Loop trail.
+
 The longer trails tend to be closer to the inside of MacLeish, and thus tend to cross higher contours. Due to their length, they cut across more contours, changing elevation more often, making it harder to hike/bike on those trails.
 
 ### Classification of trails by biodiversity
@@ -260,7 +260,9 @@ leaflet(data = trail_afield_mapped, width = "100%") %>%
 
 ### Actionable Recommendations
 
-MacLeish is building a kiosk for the field station, and will be posting materials that are useful to visitors. Our classifications can be used to build a detailed, inclusive guide for visitors, especially for Smith students looking to further their learning. Different organisations can select trails with a suitable level of difficulty. For example, organisations looking for opportunities to bond can choose an “Easy” trail, while athletic organisations looking to hone their fitness can choose a “Hard” trail. Professors teaching plant biology courses could to take their class to MacLeish, and choose a trail with the most biodiversity, and/or one that crosses the most forests. Additionally, art professors could choose trails that are in proximity to the most arts sites to bring students to, or trails that are near specific arts sites.
-A tour guide with these classifications will help visitors make more informed trail choices, optimising the use of their time and gaining a more individualised and meaningful experience. Our classifications are scalable, so one could do similar classifications for other factors once more data about MacLeish are available. For a field station like MacLeish, being able to attract a lot of visitors is key to its sustainability, development, and contribution to academia, which simultaneously benefits Smith.
+MacLeish is building a kiosk for the field station, and will be posting materials that are useful to visitors. Our classifications can be used to build a detailed guidebook for visitors, including Smith students looking to further their learning. Visitors can select trails with a suitable level of difficulty. Organisations looking for opportunities to bond can choose “Easy” trails, while those looking to hone their fitness can choose “Hard” trails. Professors teaching plant biology would be interested in the biodiversity of habitats, while art professors could choose trails in proximity to arts sites.
+
+Our classifications are scalable, so one could do similar classifications for other factors once more data about MacLeish are available. Implementing this guidebook would be worth the small investment in time and money, because it makes MacLeish easier to navigate, and helps visitors make more informed trail choices according to their preferences, optimising the use of their time, and gaining a more individualised and meaningful experience. For a field station like MacLeish, being able to attract many visitors is key to its sustainability, development, and contribution to academia, which simultaneously benefits Smith, as MacLeish is an educational and extra-curricular resource for faculty and students. Therefore, such a guidebook would be worth the resource investment.
+
 
 [^github]: https://github.com/cathyleee/sds192-mp3

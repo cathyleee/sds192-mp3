@@ -10,7 +10,7 @@ output:
 
 ### Introduction
 
-Please see our Github repository[^github] for more details on this project. Most of the data we used are in the `macleish` package retrieved from Macleish Field Station owned by Smith College. 
+Please see our Github repository[^github] for more details on this project.
 
 **Problem Statement:** Besides assigning difficulty levels to MacLeish trails based on length and elevation, we decided to classify the trails based on biodiversity and proximity to Arts Afield Sites after talking to Professor Bertone-Johnson about other possible classifications.
 ```{r message=FALSE, warning=FALSE}
@@ -24,7 +24,7 @@ proj4_aea <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y
 
 ### Classification of trails by difficulty level
 
-For difficulty level classification, we combined data from `trails` and `contours_3m` layers in `macleish` package. According to this [rating system](https://www.nps.gov/shen/planyourvisit/how-to-determine-hiking-difficulty.htm) by National Park Service, all MacLeish trails would be rated "Easy", so we developed our own heuristic to make rating relative to Macleish situation. The score for each trail is calculated relative to the highest score, as explained in the Length category:
+We combined data from `trails` and `contours_3m` layers in the `macleish` package. According to this [rating system](https://www.nps.gov/shen/planyourvisit/how-to-determine-hiking-difficulty.htm) by National Park Service, all MacLeish trails would be rated "Easy", so we developed our own heuristic for the MacLeish trails. The score for each trail is calculated relative to the highest score, as explained in the Length category:
 
 * **Length:** Rated out of 10; the longest trail (2575.217m) has a score of 10, and the scores of other trails are calculated by dividing their length by the largest length, multiplying by 10, and rounding up to an integer. 
 * **Elevation:** Rated out of 10.
@@ -36,6 +36,7 @@ We summed the partial scores and scored difficulty out of 20:
 * 0-7: Easy 
 * 8-14: Moderate 
 * 15-20: Hard 
+
 ```{r message = FALSE, warning = FALSE}
 # create the length variable of the trails
 trails <- macleish_layers[["trails"]] %>%
@@ -268,6 +269,6 @@ leaflet(data = trail_afield_mapped, width = "100%") %>%
 
 MacLeish is building a kiosk for the field station, and will be posting materials that are useful to visitors. Our classifications can be used to build a detailed guidebook for visitors, including Smithies looking to further their environmental learning. Visitors can select trails with a suitable difficulty level. Organisations looking for opportunities to bond can choose “Easy” trails, while those looking to hone their fitness can choose “Hard” trails. Professors teaching plant biology would be interested in the biodiversity of habitats, while art professors could choose trails in proximity to arts sites.
 
-Our classifications are scalable, so one could do similar classifications for other factors once more data about MacLeish are available. Implementing this guidebook would need just a small investment in time and money but it can bring huge benefits because it makes MacLeish easier to navigate, and helps visitors make better-informed trail choices according to their preferences, optimising the use of their time, and gaining a more individualised and meaningful experience. For a field station like MacLeish, being able to attract many visitors is key to its sustainability, development, and contribution to academia, which simultaneously benefits Smith, as MacLeish is an educational and extra-curricular resource for faculty and students. Also, making such a guidebook wouldn't meet any major obstacles. Therefore, it would be worth the resource investment.
+Our classifications are scalable, so one could do similar classifications for other factors once more data about MacLeish are available. Implementing this guidebook would be worth the small investment in time and money because it makes MacLeish easier to navigate, and helps visitors make better-informed trail choices according to their preferences, optimising the use of their time, and gaining a more individualised and meaningful experience. For a field station like MacLeish, being able to attract many visitors is key to its sustainability, development, and contribution to academia, which simultaneously benefits Smith, as MacLeish is an educational and extra-curricular resource for faculty and students. Furthermore, making such a guidebook wouldn’t meet any major obstacles (as we have all the necessary data), or have a detrimental environmental impact (since we are not making any physical changes).
 
 [^github]: https://github.com/cathyleee/sds192-mp3

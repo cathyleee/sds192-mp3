@@ -10,10 +10,9 @@ output:
 
 ### Introduction
 
-Please see our Github repository[^github] for more details on this project.
+Please see our Github repository[^github] for more details on this project. Most of the data we used are in the `macleish` package retrieved from Macleish Field Station owned by Smith College. 
 
-**Problem Statement:** Besides assigning difficulty levels to the MacLeish trails based on length and elevation, we decided to classify the trails based on biodiversity and proximity to Arts Afield Sites after talking to Professor Bertone Johnson about other possible classifications.
-
+**Problem Statement:** Besides assigning difficulty levels to MacLeish trails based on length and elevation, we decided to classify the trails based on biodiversity and proximity to Arts Afield Sites after talking to Professor Bertone-Johnson about other possible classifications.
 ```{r message=FALSE, warning=FALSE}
 # load the libraries and data
 library(tidyverse)
@@ -25,20 +24,18 @@ proj4_aea <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y
 
 ### Classification of trails by difficulty level
 
-We computed the lengths of each MacLeish trail, and combined them with the 10’ contour data from MassGIS, since each trail intersects with multiple contours, and at multiple points per contour. According to this [rating system](https://www.nps.gov/shen/planyourvisit/how-to-determine-hiking-difficulty.htm) by National Park Service, all MacLeish trails would be rated "Easy", so we developed our own heuristic. The score for each trail is calculated relative to the most extreme score, as explained in the Length category:
+For difficulty level classification, we combined data from `trails` and `contours_3m` layers in `macleish` package. According to this [rating system](https://www.nps.gov/shen/planyourvisit/how-to-determine-hiking-difficulty.htm) by National Park Service, all MacLeish trails would be rated "Easy", so we developed our own heuristic to make rating relative to Macleish situation. The score for each trail is calculated relative to the highest score, as explained in the Length category:
 
 * **Length:** Rated out of 10; the longest trail (2575.217m) has a score of 10, and the scores of other trails are calculated by dividing their length by the largest length, multiplying by 10, and rounding up to an integer. 
 * **Elevation:** Rated out of 10.
     - Average change in elevation: Rated out of 5; the trail with the biggest average change in elevation scores 5.
     - Number of elevation changes: Rated out of 5; the trail with the most elevation changes scores 5.
 
-
 We summed the partial scores and scored difficulty out of 20:
 
 * 0-7: Easy 
 * 8-14: Moderate 
 * 15-20: Hard 
-
 ```{r message = FALSE, warning = FALSE}
 # create the length variable of the trails
 trails <- macleish_layers[["trails"]] %>%
@@ -107,7 +104,7 @@ leaflet(data = trails_mapped, width = "100%") %>%
   addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
   addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
   addPolylines(data = macleish_layers[["contours_3m"]], color = ~pal_contours(ELEV_M), weight = 2, group = "10' Contours") %>%
-  addLegend("bottomright", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
+  addLegend("bottomleft", pal = pal_contours, values = ~macleish_layers[["contours_3m"]]$ELEV_M, title = "10' Contours Elevation in meters", opacity = 1) %>%
   addPolylines(color = ~pal(level), label = ~name, group = "Trails", opacity = 0.8) %>%
   addLegend("bottomright", pal = pal, values = ~level, title = "Difficulty Level", opacity = 1) %>%
   addLayersControl(
@@ -116,13 +113,13 @@ leaflet(data = trails_mapped, width = "100%") %>%
     options = layersControlOptions(collapsed = FALSE)
   ) 
 ```
-The map shows an anomaly: two segments in the Easy Out trail are not continuous; after consulting Professor Bertone-Johnson, we found out that they are connectors allowing access to the Eastern Loop trail.
+The map shows an anomaly: two segments in the Easy Out trail are not continuous; after consulting Professor Bertone-Johnson, we found out that they are connectors allowing easy exit from looping trails.
 
 The longer trails tend to be closer to the inside of MacLeish, and thus tend to cross higher contours. Due to their length, they cut across more contours, changing elevation more often, making it harder to hike/bike on those trails.
 
 ### Classification of trails by biodiversity
 
-For this category, we used data from the forests layer. The scores were calculated relative to the most extreme score in each category, similar to our calculations for level of difficulty. Our heuristic to rate the biodiversity of trails is:
+For this category, we used data from the `forests` layer. The scores were calculated relative to the highest score in each category, similar to our calculations for difficulty level. Our heuristic to rate the biodiversity of trails is:
 
 * **Number of forests:** Rated out of 10; the trail crossing the most forests scores 10. How many times the trails experience a scenery change.
 * **Number of distinct vegetation types:** Rated out of 10; the trail with the most biodiversity scores 10. How diverse the vegetation along the trail is.
@@ -133,7 +130,6 @@ We summed the partial scores and scored biodiversity out of 20:
 * 0-8: Least Biologically Diverse 
 * 9-16: More Biologically Diverse 
 * 17-24: Most Biologically Diverse 
-
 ```{r message = FALSE, warning = FALSE, echo, include = FALSE}
 # join the two sf data frames to find intersection between trails and forests
 trails_forests <- st_intersection(trails_combined,
@@ -201,8 +197,7 @@ leaflet(data = trails_forests, width = "100%") %>%
     options = layersControlOptions(collapsed = FALSE)
   ) 
 ```
-
-The most biologically diverse trails are the looping ones, such as the Eastern/Western loops. The least biologically diverse trails are part of the Easy Out trail, which makes sense because they are short trail connectors, and therefore were not built for the purpose of exploring nature, but to help facilitate traffic.
+The most biologically diverse trails are the looping ones, such as the Eastern/Western loops. The least biologically diverse trails are segments of the Easy Out trail, which makes sense because they are short connectors, and therefore were not built for the purpose of exploring nature, but to help facilitate traffic.
 
 ### Classification of trails by the number of Arts Afield Sites within viewing distance
 
@@ -211,7 +206,6 @@ Arts Afield Sites are locations for artistic work and reflection at MacLeish, an
 * 0 Arts Afield Sites
 * 1-2 Arts Afield Sites
 * 3-4 Arts Afield Sites
-
 ```{r message = FALSE, warning = FALSE, include = FALSE}
 # read in the Arts Afield Sites shapefile
 arts_afield <- st_read("Arts_Afield/Arts_Afield_20160406.shp")
@@ -260,7 +254,7 @@ leaflet(data = trail_afield_mapped, width = "100%") %>%
   addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
   addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
   addPolylines(color = ~pal(level), label = ~name, group="Trails", opacity=1.0) %>%
-  addLegend("bottomright", pal = pal, values = ~level) %>%
+  addLegend("bottomright", pal = pal, values = ~level, title = "Number of Arts Afield Sites Within 50 meters", opacity = 1) %>%
   addMarkers(data=afield_es, popup = ~ident, group="Arts Afield Sites") %>%
   addPolygons(data = afield_buffer, group="Arts Afield Sites") %>%
   addLayersControl(
@@ -272,9 +266,8 @@ leaflet(data = trail_afield_mapped, width = "100%") %>%
 
 ### Actionable Recommendations
 
-MacLeish is building a kiosk for the field station, and will be posting materials that are useful to visitors. Our classifications can be used to build a detailed guidebook for visitors, including Smith students looking to further their learning. Visitors can select trails with a suitable level of difficulty. Organisations looking for opportunities to bond can choose “Easy” trails, while those looking to hone their fitness can choose “Hard” trails. Professors teaching plant biology would be interested in the biodiversity of habitats, while art professors could choose trails in proximity to arts sites.
+MacLeish is building a kiosk for the field station, and will be posting materials that are useful to visitors. Our classifications can be used to build a detailed guidebook for visitors, including Smithies looking to further their environmental learning. Visitors can select trails with a suitable difficulty level. Organisations looking for opportunities to bond can choose “Easy” trails, while those looking to hone their fitness can choose “Hard” trails. Professors teaching plant biology would be interested in the biodiversity of habitats, while art professors could choose trails in proximity to arts sites.
 
-Our classifications are scalable, so one could do similar classifications for other factors once more data about MacLeish are available. Implementing this guidebook would be worth the small investment in time and money, because it makes MacLeish easier to navigate, and helps visitors make more informed trail choices according to their preferences, optimising the use of their time, and gaining a more individualised and meaningful experience. For a field station like MacLeish, being able to attract many visitors is key to its sustainability, development, and contribution to academia, which simultaneously benefits Smith, as MacLeish is an educational and extra-curricular resource for faculty and students. Therefore, such a guidebook would be worth the resource investment.
-
+Our classifications are scalable, so one could do similar classifications for other factors once more data about MacLeish are available. Implementing this guidebook would need just a small investment in time and money but it can bring huge benefits because it makes MacLeish easier to navigate, and helps visitors make better-informed trail choices according to their preferences, optimising the use of their time, and gaining a more individualised and meaningful experience. For a field station like MacLeish, being able to attract many visitors is key to its sustainability, development, and contribution to academia, which simultaneously benefits Smith, as MacLeish is an educational and extra-curricular resource for faculty and students. Also, making such a guidebook wouldn't meet any major obstacles. Therefore, it would be worth the resource investment.
 
 [^github]: https://github.com/cathyleee/sds192-mp3
